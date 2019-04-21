@@ -45,6 +45,42 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  List storage = [
+    [
+      {
+        'data': ['a11', 'b11', Null],
+        'size': 100, // bytes
+        'avaliable': 3, // bytes
+      }, // Disk 1.
+      {
+        'data': ['a12', Null, 'c11'],
+        'size': 100, // bytes
+        'avaliable': 3, // bytes
+      }, // Disk 2.
+      {
+        'data': [Null, 'b12', 'c12'],
+        'size': 100, // bytes
+        'avaliable': 3, // bytes
+      }, // Disk 3.
+    ], // RAID 5.
+    [
+      {
+        'data': [Null, 'b21', 'c21'],
+        'size': 100, // bytes
+        'avaliable': 3, // bytes
+      }, // Disk 4.
+      {
+        'data': ['a21', Null, 'c22'],
+        'size': 100, // bytes
+        'avaliable': 3, // bytes
+      }, // Disk 5.
+      {
+        'data': ['a22', 'b22', Null],
+        'size': 100, // bytes
+        'avaliable': 3, // bytes
+      }, // Disk 3.
+    ], // RAID 5.
+  ]; // RAID 0.
 
   void _incrementCounter() {
     setState(() {
@@ -71,35 +107,42 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
+      body: Column(
+        children: storage
+            .map((raid5) => Container(
+                child: Column(
+                    children: <Widget>[
+                      Text(
+                        'RAID 0',
+                        style: TextStyle(
+                            color: Theme.of(context).accentColor,
+                            fontSize: 20,
+                        ),
+                      )
+                    ] + raid5
+                        .map<Widget>(
+                            (disk) => Card(
+                              child: Column(
+                                children: <Widget>[
+                                  Text(
+                                    disk['data'].toString(),
+                                    style: Theme.of(context).textTheme.display1,
+                                  ),
+                                  Text(
+                                    'Size: ${disk["Size"].toString()}',
+                                  ),
+                                  Text(
+                                    'Avaliable: ${disk["Avaliable"].toString()}',
+                                  ),
+                                ],
+                              ),
+                            )
+                        )
+                        .toList()
+                )
+        )
+        )
+            .toList(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
