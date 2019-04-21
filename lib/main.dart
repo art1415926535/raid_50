@@ -321,7 +321,26 @@ class DiskWidget extends StatelessWidget {
                           storage[raid5Index][diskIndex]['data'][dataIndex];
                       Text info;
                       Icon icon;
-                      if (data != null) {
+                      if (data == null) {
+                        icon = Icon(
+                          Icons.local_parking,
+                          color: parityColor,
+                        );
+                        List<String> parityInfo = [];
+                        for (Map disk in storage[raid5Index]) {
+                          List<String> data = disk['data'];
+                          if (dataIndex < data.length) {
+                            String row = data[dataIndex];
+                            if (row != null && row.codeUnitAt(0) != 0) {
+                              parityInfo.add(row);
+                            }
+                          }
+                        }
+                        info = Text(
+                          parityInfo.join(', '),
+                          style: TextStyle(color: parityColor),
+                        );
+                      } else if (data.codeUnitAt(0) != 0) {
                         icon = Icon(
                           Icons.insert_drive_file,
                           color: Colors.grey,
@@ -329,22 +348,13 @@ class DiskWidget extends StatelessWidget {
                         info = Text(data);
                       } else {
                         icon = Icon(
-                          Icons.local_parking,
-                          color: parityColor,
+                          Icons.space_bar,
+                          color: Colors.grey,
                         );
-                        info = Text(
-                          storage[raid5Index]
-                              .map((d) => {
-                                    dataIndex < d['data'].length
-                                        ? d['data'][dataIndex]
-                                        : '<error>'
-                                  })
-                              .reduce((m1, m2) => m1..addAll(m2))
-                              .where((f) => f != null)
-                              .join(', '),
-                          style: TextStyle(color: parityColor),
-                        );
+                        info = Text('пусто',
+                            style: Theme.of(context).textTheme.caption);
                       }
+
                       return InkWell(
                         child: Padding(
                           padding: const EdgeInsets.only(

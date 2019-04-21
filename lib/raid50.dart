@@ -98,8 +98,7 @@ class RAID50 {
   changeDiskSize(int newSize) {
     for (var i in raid0) {
       for (var j in i) {
-        if(j.changeCapacity(newSize)!= null)
-          return j.changeCapacity(newSize);
+        if (j.changeCapacity(newSize) != null) return j.changeCapacity(newSize);
         j.changeCapacity(newSize);
       }
     }
@@ -107,10 +106,11 @@ class RAID50 {
 
   addDisk(int addNum) {
     if (addNum % 2 != 0) {
-      return 'Нечетное значение';
+      return 'Получено нечетное значение дисков';
     }
     if (raid0[0][0].getDataVolume() != 0) {
-      return 'Диск заполнен данными, невозможно изменить количество дисков';
+      return 'Невозможно изменить количество дисков на устройстве, '
+          'которые имеет данные';
     }
     num += addNum;
     var length = addNum ~/ 2;
@@ -129,15 +129,15 @@ class RAID50 {
   int getRaidVolume() {
     int res = 0;
     for (List listDisk in raid0) {
-      for (Disk disk in listDisk)
-        res += disk.freeMemory;
+      for (Disk disk in listDisk) res += disk.freeMemory;
     }
     return res;
   }
 
   writeData(String data) {
+    var string = String.fromCharCodes([0]);
     while (data.length % num != 0) {
-      data += ' ';
+      data += string;
     }
     if (data.length > getRaidVolume()) {
       return 'Недостаточно места в памяти';
