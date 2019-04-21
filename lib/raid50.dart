@@ -17,19 +17,24 @@ class Disk {
   Disk(int capacity) {
     this.capacity = capacity;
     data = [];
-    freeMemory = this.capacity - data.length;
+    freeMemory = capacity;
   }
 
   int getDataVolume() {
     int size = 0;
     for (var i in data) {
-      if (i != null) size += i.length;
+      if (i != null) {
+        size += i.length;
+      } else {
+        size += 1;
+      }
     }
     return size;
   }
 
   deleteData(int index) {
-    data[index] = '';
+    data.removeAt(index);
+    updateFreeMemory();
   }
 
   updateFreeMemory() {
@@ -46,6 +51,7 @@ class Disk {
 
   setParity() {
     this.data.add(null);
+    updateFreeMemory();
   }
 
   changeCapacity(int newCapacity) {
@@ -123,7 +129,8 @@ class RAID50 {
   int getRaidVolume() {
     int res = 0;
     for (List listDisk in raid0) {
-      for (Disk disk in listDisk) res += disk.freeMemory;
+      for (Disk disk in listDisk)
+        res += disk.freeMemory;
     }
     return res;
   }
@@ -133,7 +140,7 @@ class RAID50 {
       data += ' ';
     }
     if (data.length > getRaidVolume()) {
-      return 'Нет свободной памяти';
+      return 'Недостаточно места в памяти';
     }
     int sizeBlock = data.length ~/ num;
     var rand = new Random();

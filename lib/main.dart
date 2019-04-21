@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:raid_50/raid50.dart';
 
 void main() => runApp(MyApp());
 
@@ -19,6 +20,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
@@ -29,42 +31,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List storage = [
-    [
-      {
-        'data': ['a11', 'b11', null],
-        'size': 1024, // bytes
-        'avaliable': 3, // bytes
-      }, // Disk 1.
-      {
-        'data': ['a12', null, 'c11'],
-        'size': 1024, // bytes
-        'avaliable': 3, // bytes
-      }, // Disk 2.
-      {
-        'data': [null, 'b12', 'c12'],
-        'size': 1024, // bytes
-        'avaliable': 3, // bytes
-      }, // Disk 3.
-    ], // RAID 5.
-    [
-      {
-        'data': [null, 'b21', 'c21'],
-        'size': 1024, // bytes
-        'avaliable': 3, // bytes
-      }, // Disk 4.
-      {
-        'data': ['a21', null, 'c22'],
-        'size': 1024, // bytes
-        'avaliable': 3, // bytes
-      }, // Disk 5.
-      {
-        'data': ['a22', 'b22', null],
-        'size': 1024, // bytes
-        'avaliable': 3, // bytes
-      }, // Disk 3.
-    ], // RAID 5.
-  ]; // RAID 0.
+  RAID50 raid = RAID50(6, 4);
+
+  List storage = [];
 
   int pressedRow;
 
@@ -88,10 +57,15 @@ class _MyHomePageState extends State<MyHomePage> {
         });
     if (diskCount == null) return;
 
-    _errorDialog(context, 'Не были добавлены диски: $diskCount шт');
+    String error = raid.addDisk(diskCount);
+
+    if (error != null) {
+      _errorDialog(context, error);
+      return;
+    }
 
     setState(() {
-      storage = storage;
+      storage = raid.info();
     });
   }
 
@@ -105,20 +79,25 @@ class _MyHomePageState extends State<MyHomePage> {
             children: List<Widget>.generate(10, (int i) {
               return SimpleDialogOption(
                 onPressed: () {
-                  diskSize = pow(2, i + 2);
+                  diskSize = pow(2, i + 1);
                   Navigator.pop(context);
                 },
-                child: Text('${pow(2, i + 2)} байт'),
+                child: Text('${pow(2, i + 1)} байт'),
               );
             }),
           );
         });
     if (diskSize == null) return;
 
-    _errorDialog(context, 'Размер дисков не был изменен до $diskSize байт');
+    String error = raid.changeDiskSize(diskSize);
+
+    if (error != null) {
+      _errorDialog(context, error);
+      return;
+    }
 
     setState(() {
-      storage = storage;
+      storage = raid.info();
     });
   }
 
@@ -155,10 +134,15 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     if (data == null || data == '') return;
 
-    await _errorDialog(context, 'Не были добавлены данные: "$data"');
+    String error = raid.writeData(data);
+
+    if (error != null) {
+      _errorDialog(context, error);
+      return;
+    }
 
     setState(() {
-      storage = storage;
+      storage = raid.info();
     });
   }
 
@@ -179,13 +163,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void deleteData(int dataIndex) {
     setState(() {
-      storage = storage;
-      _errorDialog(context, 'Удаление данных №$dataIndex не выполнено');
+      String error = raid.deleteDataFromDisk(dataIndex);
+
+      if (error != null) {
+        _errorDialog(context, error);
+        return;
+      }
+
+      setState(() {
+        storage = raid.info();
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    storage = raid.info();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -246,8 +239,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Icon(Icons.add),
               backgroundColor: Colors.blueAccent,
               label: 'Добавить диски',
-              onTap: () => {_addDisksDialog(context)}
-          ),
+              onTap: () => {_addDisksDialog(context)}),
           SpeedDialChild(
             child: Icon(Icons.photo_size_select_small),
             backgroundColor: Colors.blueAccent,
@@ -340,17 +332,16 @@ class DiskWidget extends StatelessWidget {
                           Icons.local_parking,
                           color: parityColor,
                         );
-                        var parityOfData = storage[raid5Index]
-                            .map((d) => {
-                                  dataIndex < d['data'].length
-                                      ? d['data'][dataIndex]
-                                      : '<error>'
-                                })
-                            .reduce((m1, m2) => m1..addAll(m2))
-                            .where((f) => f != null)
-                            .join(', ');
                         info = Text(
-                          '// ' + parityOfData,
+                          storage[raid5Index]
+                              .map((d) => {
+                                    dataIndex < d['data'].length
+                                        ? d['data'][dataIndex]
+                                        : '<error>'
+                                  })
+                              .reduce((m1, m2) => m1..addAll(m2))
+                              .where((f) => f != null)
+                              .join(', '),
                           style: TextStyle(color: parityColor),
                         );
                       }
