@@ -148,7 +148,6 @@ class RAID50{
     int sizeBlock = data.length ~/ this.num;
     var rand = new Random(56);
     int parity = rand.nextInt(this.num~/2);
-    print('DEBUG parity = $parity');
     int s = 0;
     for(int i = 0; i<this.listDisk0.length; i++){
       if(i != parity) {
@@ -156,19 +155,16 @@ class RAID50{
         s += sizeBlock;
       }
       else{
-        print('DEBUG disk $i');
         this.listDisk0[i].setParity();
       }
     }
     parity = rand.nextInt(this.num~/2);
-    print('DEBUG parity = $parity');
     for(int i = 0; i<this.listDisk1.length; i++){
       if(i != parity) {
         this.listDisk1[i].addData(data.substring(s, s + sizeBlock));
         s += sizeBlock;
       }
       else{
-        print('DEBUG disk $i');
         this.listDisk1[i].setParity();
       }
     }
@@ -177,7 +173,7 @@ class RAID50{
 }
 
 
-void main() {
+main() {
   var r = RAID50(6, 10);
   var l = generateDataString(10);
   r.fillDataToDisk(l);
