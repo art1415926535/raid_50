@@ -2,185 +2,152 @@ import 'dart:math';
 
 String generateDataString(int length) {
   var rand = new Random();
-  var codes = new List.generate(
-      length,
-          (index){
-        return rand.nextInt(33)+89;
-      }
-  );
+  var codes = new List.generate(length, (index) {
+    return rand.nextInt(33) + 89;
+  });
   var res = new String.fromCharCodes(codes);
   return res;
 }
 
-class Disk{
+class Disk {
   List<String> data;
   int capacity;
   int freeMemory;
 
-  Disk(int capacity){
+  Disk(int capacity) {
     this.capacity = capacity;
-    this.data = [];
-    this.freeMemory = this.capacity - data.length;
+    data = [];
+    freeMemory = this.capacity - data.length;
   }
 
-  int getDataVolume(){
+  int getDataVolume() {
     int size = 0;
-    for(var i in this.data){
-        size += i.length;
+    for (var i in data) {
+      if (i != null) size += i.length;
     }
     return size;
   }
 
-  deleteData(){
-    this.data = [];
+  deleteData(int index) {
+    data[index] = '';
   }
 
-  updateFreeMemory(){
-    this.freeMemory = this.capacity - this.getDataVolume();
+  updateFreeMemory() {
+    freeMemory = capacity - getDataVolume();
   }
 
-  fillData(String data){
-    if(data.length > this.getDataVolume()){
-      return {-1: 'No free space'};
+  fillData(String data) {
+    if (data.length > getDataVolume()) {
+      return 'Нет свободного места на диске';
     }
     this.data.add(data);
-    this.updateFreeMemory();
+    updateFreeMemory();
   }
 
-  setParity(){
+  setParity() {
     this.data.add(null);
   }
 
-  changeCapacity(int newCapacity){
-    if(newCapacity < this.getDataVolume()){
-      return {-1: 'Value entered is smaller than data size'};
+  changeCapacity(int newCapacity) {
+    if (newCapacity < getDataVolume()) {
+      return 'Введенное значение меньше, чем занятая память';
     }
-    this.capacity = newCapacity;
-    this.updateFreeMemory();
+    capacity = newCapacity;
+    updateFreeMemory();
   }
 
-  addData(String data){
-    if(data.length > this.freeMemory){
-      return {-1: 'No free space'};
+  addData(String data) {
+    if (data.length > this.freeMemory) {
+      return 'Нет свободного места на диске';
     }
     this.data.add(data);
     this.updateFreeMemory();
   }
 
-  info(){
-    return {'disk size': this.capacity, 'data': this.data, 'free': this.freeMemory};
+  info() {
+    return {
+      'size': this.capacity,
+      'data': this.data,
+      'avaliable': this.freeMemory
+    };
   }
 }
 
-class RAID50{
+class RAID50 {
   int num;
-  List<Disk> listDisk0, listDisk1;
+  List<List> raid0;
 
-  RAID50(int num, int diskSize){
+  RAID50(int num, int diskSize) {
     this.num = num;
-    var length = num~/2;
-    this.listDisk0 = new List<Disk>.generate(length, (i) => Disk(diskSize));
-    this.listDisk1 = new List<Disk>.generate(length, (i) => Disk(diskSize));
+    raid0 = new List<List>.generate(
+        2, (i) => List<Disk>.generate(num ~/ 2, (j) => Disk(diskSize)));
   }
 
-  info(){
-    var listInfo = [];
-    for(int i = 0; i < this.listDisk0.length; i++){
-      listInfo.add({'Disk $i': listDisk0[i].info()});
-    }
-    for(int i = 0; i < this.listDisk1.length; i++){
-      int j = i + this.listDisk0.length;
-      listInfo.add({'Disk $j': listDisk1[i].info()});
-    }
-    return listInfo;
+  info() {
+    return raid0
+        .map((listDisk) => listDisk.map((disk) => disk.info()).toList())
+        .toList();
   }
 
-  changeDiskSize(int newSize){
-    for(var i in this.listDisk0){
-      i.changeCapacity(newSize);
-    }
-    for(var i in this.listDisk1){
-      i.changeCapacity(newSize);
+  changeDiskSize(int newSize) {
+    for (var i in raid0) {
+      for (var j in i) {
+        if(j.changeCapacity(newSize)!= null)
+          return j.changeCapacity(newSize);
+        j.changeCapacity(newSize);
+      }
     }
   }
 
-  changeNumDisk(int newNum){
-    if(newNum%2 != 0){
-      return {-1: 'Odd value'};
+  addDisk(int addNum) {
+    if (addNum % 2 != 0) {
+      return 'Нечетное значение';
     }
-    if(this.listDisk0[0].getDataVolume() != 0){
-      return {-1: 'Disk have data'};
+    if (raid0[0][0].getDataVolume() != 0) {
+      return 'Диск заполнен данными, невозможно изменить количество дисков';
     }
-    this.num = newNum;
-    var length = newNum~/2;
-    var capacity = this.listDisk0[0].capacity;
-    this.listDisk0.addAll(new List<Disk>.generate(length, (int) => Disk(capacity)));
-    this.listDisk1.addAll(new List<Disk>.generate(length, (int) => Disk(capacity)));
-  }
-
-  deleteDataFromAllDisk(){
-    for(var i in this.listDisk0){
-      i.deleteData();
-    }
-    for(var i in this.listDisk1){
-      i.deleteData();
+    num += addNum;
+    var length = addNum ~/ 2;
+    var capacity = raid0[0][0].capacity;
+    for (var diskList in raid0) {
+      diskList.addAll(new List<Disk>.generate(length, (int) => Disk(capacity)));
     }
   }
 
-  int getRaidVolume(){
+  deleteDataFromDisk(int index) {
+    for (var listDisk in raid0) {
+      for (Disk disk in listDisk) disk.deleteData(index);
+    }
+  }
+
+  int getRaidVolume() {
     int res = 0;
-    for(var i in this.listDisk0){
-      res += i.freeMemory;
-    }
-    for(var i in this.listDisk1){
-      res += i.freeMemory;
+    for (List listDisk in raid0) {
+      for (Disk disk in listDisk) res += disk.freeMemory;
     }
     return res;
   }
 
-  fillDataToDisk(String data){
-    if(data.length > this.getRaidVolume()){
-      return {-1: 'No memory space'};
-    }
-    while(data.length%this.num != 0) {
+  writeData(String data) {
+    while (data.length % num != 0) {
       data += ' ';
     }
-    int sizeBlock = data.length ~/ this.num;
-    var rand = new Random(56);
-    int parity = rand.nextInt(this.num~/2);
-    int s = 0;
-    for(int i = 0; i<this.listDisk0.length; i++){
-      if(i != parity) {
-        this.listDisk0[i].addData(data.substring(s, s + sizeBlock));
-        s += sizeBlock;
-      }
-      else{
-        this.listDisk0[i].setParity();
-      }
+    if (data.length > getRaidVolume()) {
+      return 'Нет свободной памяти';
     }
-    parity = rand.nextInt(this.num~/2);
-    for(int i = 0; i<this.listDisk1.length; i++){
-      if(i != parity) {
-        this.listDisk1[i].addData(data.substring(s, s + sizeBlock));
-        s += sizeBlock;
-      }
-      else{
-        this.listDisk1[i].setParity();
+    int sizeBlock = data.length ~/ num;
+    var rand = new Random();
+    int s = 0;
+    for (List listDisk in raid0) {
+      int parity = rand.nextInt(num ~/ 2);
+      for (int i = 0; i < listDisk.length; i++) {
+        if (i != parity) {
+          listDisk[i].addData(data.substring(s, s + sizeBlock));
+          s += sizeBlock;
+        } else {
+          listDisk[i].setParity();
+        }
       }
     }
   }
-
-}
-
-
-main() {
-  var r = RAID50(6, 10);
-  var l = generateDataString(10);
-  r.fillDataToDisk(l);
-  l = generateDataString(10);
-  r.fillDataToDisk(l);
-  l = generateDataString(10);
-
-  r.fillDataToDisk(l);
-  print(r.info());
 }
