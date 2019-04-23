@@ -157,4 +157,8 @@ class RAID50 {
       }
     }
   }
+
+  getRedundancy(int index){
+    return (raid0[0][0].capacity * num - raid0[0][0].data.length * (num~/2))/(raid0[0][0].capacity * num);
+  }
 }
