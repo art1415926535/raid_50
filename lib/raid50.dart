@@ -134,6 +134,14 @@ class RAID50 {
     return res;
   }
 
+  int getRaidDataVolume() {
+    int res = 0;
+    for (List listDisk in raid0) {
+      for (Disk disk in listDisk) res += disk.getDataVolume();
+    }
+    return res;
+  }
+
   writeData(String data) {
     var string = String.fromCharCodes([0]);
     while (data.length % num != 0) {
@@ -158,7 +166,9 @@ class RAID50 {
     }
   }
 
-  getRedundancy(int index){
-    return (raid0[0][0].capacity * num - raid0[0][index].data.length * (num~/2))/(raid0[0][0].capacity * num);
+  getRedundancy() {
+    return (raid0[0][0].capacity * num -
+            getRaidDataVolume() * (raid0[0][0].data.length)) /
+        (raid0[0][0].capacity * num);
   }
 }
