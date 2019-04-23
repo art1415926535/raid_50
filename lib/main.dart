@@ -82,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   diskSize = pow(2, i + 1);
                   Navigator.pop(context);
                 },
-                child: Text('${pow(2, i + 1)} байт'),
+                child: Text('${pow(2, i + 1)} ГБ'),
               );
             }),
           );
@@ -151,6 +151,19 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(title: Text('Ошибка'), content: Text(text));
+      },
+    );
+  }
+
+  Future<String> _getRedundancy(BuildContext context) async {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        String r = raid.getRedundancy().toStringAsFixed(2);
+        return AlertDialog(
+            title: Text('Избыточность'),
+            content: Text('Избыточность равна $r'),
+        );
       },
     );
   }
@@ -247,6 +260,12 @@ class _MyHomePageState extends State<MyHomePage> {
             onTap: () => {_updateDiskSize(context)},
           ),
           SpeedDialChild(
+            child: Icon(Icons.info_outline),
+            backgroundColor: Colors.blueAccent,
+            label: 'Избыточность',
+            onTap: () => {_getRedundancy(context)},
+          ),
+          SpeedDialChild(
             child: Icon(Icons.keyboard),
             backgroundColor: Colors.blueAccent,
             label: 'Добавить данные',
@@ -291,7 +310,7 @@ class DiskWidget extends StatelessWidget {
               children: <Widget>[
                 Text('Размер диска: '),
                 Text(
-                  '${storage[raid5Index][diskIndex]['size']} Б',
+                  '${storage[raid5Index][diskIndex]['size']} ГБ',
                   style: Theme.of(context).textTheme.body2,
                 ),
               ],
@@ -300,7 +319,7 @@ class DiskWidget extends StatelessWidget {
               children: <Widget>[
                 Text('Доступно: '),
                 Text(
-                  '${storage[raid5Index][diskIndex]['avaliable']} Б',
+                  '${storage[raid5Index][diskIndex]['avaliable']} ГБ',
                   style: Theme.of(context).textTheme.body2,
                 ),
               ],
@@ -321,23 +340,23 @@ class DiskWidget extends StatelessWidget {
                           storage[raid5Index][diskIndex]['data'][dataIndex];
                       Text info;
                       Icon icon;
-                      if (data == null) {
+                      if (data is int) {
                         icon = Icon(
                           Icons.local_parking,
                           color: parityColor,
                         );
                         List<String> parityInfo = [];
                         for (Map disk in storage[raid5Index]) {
-                          List<String> data = disk['data'];
+                          List data = disk['data'];
                           if (dataIndex < data.length) {
-                            String row = data[dataIndex];
-                            if (row != null && row.codeUnitAt(0) != 0) {
+                            var row = data[dataIndex];
+                            if (row is String && row.codeUnitAt(0) != 0) {
                               parityInfo.add(row);
                             }
                           }
                         }
                         info = Text(
-                          parityInfo.join(', '),
+                          'xor(${parityInfo.join(', ')})',
                           style: TextStyle(color: parityColor),
                         );
                       } else if (data.codeUnitAt(0) != 0) {

@@ -9,8 +9,9 @@ String generateDataString(int length) {
   return res;
 }
 
+
 class Disk {
-  List<String> data;
+  List data;
   int capacity;
   int freeMemory;
 
@@ -20,13 +21,13 @@ class Disk {
     freeMemory = capacity;
   }
 
-  int getDataVolume() {
+  int getDataVolume({bool withoutParity = false}) {
     int size = 0;
-    for (var i in data) {
-      if (i != null) {
-        size += i.length;
-      } else {
-        size += 1;
+    for (var d in data) {
+      if (d is String) {
+        size += d.length;
+      } else if (!withoutParity) {
+        size += d;
       }
     }
     return size;
@@ -49,8 +50,8 @@ class Disk {
     updateFreeMemory();
   }
 
-  setParity() {
-    this.data.add(null);
+  setParity(int size) {
+    this.data.add(size);
     updateFreeMemory();
   }
 
@@ -134,10 +135,11 @@ class RAID50 {
     return res;
   }
 
-  int getRaidDataVolume() {
+  int getRaidDataVolume({bool withoutParity = false}) {
     int res = 0;
     for (List listDisk in raid0) {
-      for (Disk disk in listDisk) res += disk.getDataVolume();
+      for (Disk disk in listDisk)
+        res += disk.getDataVolume(withoutParity: withoutParity);
     }
     return res;
   }
@@ -160,15 +162,14 @@ class RAID50 {
           listDisk[i].addData(data.substring(s, s + sizeBlock));
           s += sizeBlock;
         } else {
-          listDisk[i].setParity();
+          listDisk[i].setParity(sizeBlock);
         }
       }
     }
   }
 
   getRedundancy() {
-    return (raid0[0][0].capacity * num -
-            getRaidDataVolume() * (raid0[0][0].data.length)) /
-        (raid0[0][0].capacity * num);
+    return 1 -
+        getRaidDataVolume(withoutParity: true) / (raid0[0][0].capacity * num);
   }
 }
